@@ -1,10 +1,3 @@
-"""
-Extended Attack Suite for Defence Evaluation
-
-This module provides 15 additional attack methods for comprehensive defence testing.
-For usage, see Evaluate_defence.py with --extended flag.
-"""
-
 import os
 import sys
 import importlib.util

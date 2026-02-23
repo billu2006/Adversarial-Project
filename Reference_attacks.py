@@ -1,8 +1,3 @@
-"""
-Reference Attack Methods for COMP219 Assignment
-Author: Lingfang Li
-"""
-
 import torch
 import torch.nn.functional as F
 

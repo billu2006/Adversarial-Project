@@ -1,8 +1,3 @@
-"""
-Evaluate Attack Ability - Test Your Attack Against Reference Models
-Author: Lingfang Li
-"""
-
 import numpy as np
 import torch
 import torch.nn as nn

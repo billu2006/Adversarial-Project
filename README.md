@@ -39,9 +39,8 @@ cd Adversarial-Project
 This repository does not include pretrained models.
 
 **Download reference models:**
-1. Go to Canvas → COMP219 → Lecture 14
-2. Download `Defenders.zip`
-3. Extract it into the project root
+1. Download the `Defenders` file
+2. Extract it into the project root
 
 After extraction, you should have:
 

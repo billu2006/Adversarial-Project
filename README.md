@@ -14,12 +14,6 @@ Fashion-MNIST classifiers, scored by how much accuracy each model retains under
 attack. **This project is not about the ML.** It is about everything around it —
 the job lifecycle, the queue, the persistence, the failure modes, the threat
 model.
-
-> **Why it has to be asynchronous, in one sentence:** a benchmark takes minutes,
-> so the obvious synchronous endpoint would time out — which forces a job queue,
-> a worker process, persisted state and a polling contract. That is the
-> interesting engineering.
-
 ---
 
 ## Contents

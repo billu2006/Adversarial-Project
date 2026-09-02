@@ -13,7 +13,7 @@ from fastapi import Depends, FastAPI
 
 from service import __version__
 from service.config import get_settings
-from service.errors import register_exception_handlers
+from service.errors import ERROR_RESPONSES, register_exception_handlers
 from service.logging_config import configure_logging
 from service.middleware import RequestContextMiddleware
 from service.routers import catalog, health, jobs
@@ -51,8 +51,12 @@ def create_app() -> FastAPI:
     # /healthz is deliberately unauthenticated: an orchestrator probing it
     # should not need the shared key, and it exposes nothing but up/down.
     app.include_router(health.router)
-    app.include_router(jobs.router, dependencies=[Depends(require_api_key)])
-    app.include_router(catalog.router, dependencies=[Depends(require_api_key)])
+    app.include_router(
+        jobs.router, dependencies=[Depends(require_api_key)], responses=ERROR_RESPONSES
+    )
+    app.include_router(
+        catalog.router, dependencies=[Depends(require_api_key)], responses=ERROR_RESPONSES
+    )
 
     logger.info(
         "Application started",

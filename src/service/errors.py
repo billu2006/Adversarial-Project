@@ -90,6 +90,17 @@ def error_body(code: str, message: str, details: dict[str, Any] | None = None) -
     return body
 
 
+#: Error responses worth advertising in the OpenAPI document. Without these the
+#: /docs page lists only the 200, and a caller has to discover the failure
+#: shapes by triggering them.
+ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
+    400: {"description": "Invalid request, or a model/attack outside the whitelist"},
+    401: {"description": "Missing or invalid API key"},
+    404: {"description": "No such job"},
+    409: {"description": "State conflict: results not ready, or job not cancellable"},
+}
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Attach handlers so no route can leak a non-envelope error response."""
 

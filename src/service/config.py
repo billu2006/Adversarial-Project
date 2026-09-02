@@ -33,6 +33,14 @@ class Settings(BaseSettings):
     api_key: str = "local-development-key"
     require_api_key: bool = True
 
+    #: How the worker executes a job. RQ's default forks a "work-horse" process
+    #: per job, which is what gives each benchmark a clean process and a
+    #: killable timeout - the right default in the Linux container. It is not
+    #: usable on macOS: once torch is imported, the Objective-C runtime aborts
+    #: in any forked child that has not exec'd. "auto" picks fork on Linux and
+    #: simple (in-process) elsewhere; set it explicitly to override.
+    worker_class: Literal["auto", "fork", "simple"] = "auto"
+
     #: How the API hands work to the worker. "redis" is the real path; "inline"
     #: runs the job synchronously in-process and exists for tests and for
     #: single-container demos.

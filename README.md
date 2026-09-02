@@ -517,6 +517,41 @@ make format        # apply fixes
 tests and the CLI scripts in [`scripts/`](scripts/); the API and the rest of the
 suite run without it.
 
+<details>
+<summary>Running the API and worker on the host, without Docker</summary>
+
+Useful if you want a debugger on the worker. You need a Redis
+(`brew install redis`); SQLite can stand in for Postgres.
+
+```bash
+brew install redis && redis-server &
+
+cat > .local.env <<'ENV'
+DATABASE_URL=sqlite:///./local.db
+REDIS_URL=redis://localhost:6379/0
+QUEUE_BACKEND=redis
+API_KEY=local-development-key
+JSON_LOGS=false
+ENV
+set -a && . ./.local.env && set +a
+
+python -c "from service.database import engine; from service.models import Base; Base.metadata.create_all(engine)"
+uvicorn service.main:app --port 8000   # terminal 1
+python -m service.worker.main          # terminal 2
+./scripts/demo.sh                      # terminal 3
+```
+
+**One platform note.** RQ forks a work-horse process per job, which is what the
+container wants: a fresh process per benchmark and a timeout that can be
+enforced by killing it. macOS will not allow it — PyTorch initialises
+Objective-C state on import, and Apple's runtime aborts in any forked child that
+has not `exec`'d, so the work-horse dies mid-benchmark and the job is left for
+the reaper. `WORKER_CLASS=auto` (the default) therefore forks on Linux and runs
+jobs in-process everywhere else. `resolve_worker_class` in
+[`src/service/worker/main.py`](src/service/worker/main.py) is the whole of it.
+
+</details>
+
 Configuration is environment variables all the way down
 ([`src/service/config.py`](src/service/config.py)); Compose sets them, and
 [`.env.example`](.env.example) documents them for a run outside it. There is no

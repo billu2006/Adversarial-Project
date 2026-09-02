@@ -11,8 +11,11 @@ htmlcov/
 
 # Local environment / state
 .env
+.local.env
 data/
 *.db
+*.log
+dump.rdb
 
 # OS / editor metadata
 .DS_Store

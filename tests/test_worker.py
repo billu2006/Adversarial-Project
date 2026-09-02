@@ -160,3 +160,35 @@ def test_request_id_propagates_into_the_worker(monkeypatch, queued_job):
     run_benchmark_job(job_id=str(queued_job.id), request_id="abc123")
 
     assert request_id_var.get() == "abc123"
+
+
+class TestWorkerClassSelection:
+    """RQ's forking worker is right in the container and impossible on macOS.
+
+    PyTorch initialises Objective-C state on import, and Apple's runtime aborts
+    in a forked child that has not exec'd - so a native macOS worker has to run
+    jobs in-process. Getting this backwards does not fail a test, it kills the
+    work-horse mid-benchmark and leaves the job for the reaper.
+    """
+
+    def test_linux_forks_a_work_horse_per_job(self):
+        from rq import Worker
+
+        from service.worker.main import resolve_worker_class
+
+        assert resolve_worker_class("auto", platform="linux") is Worker
+
+    def test_macos_runs_jobs_in_process(self):
+        from rq import SimpleWorker
+
+        from service.worker.main import resolve_worker_class
+
+        assert resolve_worker_class("auto", platform="darwin") is SimpleWorker
+
+    def test_the_choice_can_be_forced_either_way(self):
+        from rq import SimpleWorker, Worker
+
+        from service.worker.main import resolve_worker_class
+
+        assert resolve_worker_class("fork", platform="darwin") is Worker
+        assert resolve_worker_class("simple", platform="linux") is SimpleWorker

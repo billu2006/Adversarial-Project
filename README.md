@@ -561,44 +561,6 @@ would not make that part better.
 
 ---
 
-## Limitations and what I would do next
-
-Known gaps, in the order I would close them:
-
-- **Per-key rate limiting.** The `max_active_jobs` check is global backpressure,
-  not per-client fairness. One noisy key can currently fill the queue for
-  everyone. A token bucket in Redis keyed on the API key is the obvious fix.
-- **A transactional outbox for enqueueing.** Today the job row is committed and
-  *then* enqueued; if Redis is unreachable in between, the job is marked
-  `failed` (rather than stranded), but that is a compensating action, not
-  atomicity. Writing the enqueue intent to an outbox table in the same
-  transaction and having a relay drain it would make the two genuinely atomic.
-- **Result caching.** The same `(model, attacks, epsilon, max_iterations)`
-  produces the same numbers on a deterministic seed. A hash of that tuple could
-  return a previous job's results instantly instead of spending minutes of CPU.
-- **Progress via SSE instead of polling.** The worker already emits per-attack
-  progress to the logs; streaming it to the client would remove the polling loop
-  entirely. `GET /v1/jobs/{id}/events` as an event stream.
-- **Real authentication.** One shared key means no tenancy: any key holder can
-  read any job. Per-user keys with jobs scoped to their owner is the minimum
-  before this is usable by more than one person.
-- **Autoscaling on queue depth.** `--scale worker=3` is manual. Watching `LLEN`
-  on the RQ queue and adding consumers, with connection pooling sized to match,
-  is what "a thousand jobs a minute" would actually need.
-- **A heartbeat column.** The reaper currently infers abandonment from
-  `started_at` plus the job timeout, which is correct but coarse: a worker that
-  dies one second in still occupies a `running` row for the full timeout. A
-  `heartbeat_at` the worker touches every 30s would let the reaper act in
-  seconds instead of minutes.
-- **A GPU path.** Everything here is CPU-only, which is why the evaluation set
-  is capped at 2048 samples. `resolve_device()` already prefers CUDA when it is
-  present; nothing else has been tried on a GPU.
-- **`GET /v1/jobs` is unfiltered by owner and unindexed by model.** Fine at this
-  scale; the first person who wants "all jobs for model X" will need another
-  index.
-
----
-
 ## Project layout
 
 ```

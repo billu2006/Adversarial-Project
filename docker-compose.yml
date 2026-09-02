@@ -1,0 +1,100 @@
+# The whole system: four services plus a one-shot migration step. This is the
+# only way the project is meant to be run - there is no hosted deployment.
+#
+#   docker compose up --build
+#   curl -H "X-API-Key: local-development-key" localhost:8000/v1/models
+#
+# `migrate` is a one-shot service the API waits on, so a clean clone gets a
+# migrated database without anyone remembering to run alembic by hand.
+
+name: adversarial-benchmark
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: benchmark
+      POSTGRES_PASSWORD: benchmark
+      POSTGRES_DB: benchmark
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Dependents wait for readiness, not just for the container to exist.
+      test: ["CMD-SHELL", "pg_isready -U benchmark -d benchmark"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      target: api
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://benchmark:benchmark@postgres:5432/benchmark
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      target: api
+    ports:
+      - "8000:8080"
+    environment:
+      DATABASE_URL: postgresql+psycopg://benchmark:benchmark@postgres:5432/benchmark
+      REDIS_URL: redis://redis:6379/0
+      API_KEY: ${API_KEY:-local-development-key}
+      ENVIRONMENT: local
+      LOG_LEVEL: INFO
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8080/healthz').status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    build:
+      context: .
+      target: worker
+    environment:
+      DATABASE_URL: postgresql+psycopg://benchmark:benchmark@postgres:5432/benchmark
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: local
+      LOG_LEVEL: INFO
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    volumes:
+      # Cache the Fashion-MNIST download across restarts.
+      - fmnist:/app/data
+    # Scale with `docker compose up --scale worker=3`: the queue is the only
+    # coordination the workers need.
+    deploy:
+      replicas: 1
+
+volumes:
+  pgdata:
+  fmnist:

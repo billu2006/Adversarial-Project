@@ -17,7 +17,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install ruff==0.6.9
+      # Pinned exactly, and kept in step with the `dev` extra in pyproject.toml.
+      # Ruff's rules move between releases - the BLE001 exemption for a blind
+      # except that logs with exc_info, for one - so a floating version means CI
+      # and a developer's machine can disagree about identical code.
+      - run: pip install ruff==0.16.5
       - run: ruff check .
       - run: ruff format --check .
 

@@ -8,10 +8,11 @@ It runs entirely on your machine: `docker compose up` brings up the API, a
 worker, PostgreSQL and Redis, and `./scripts/demo.sh` drives a benchmark through
 the whole lifecycle.
 
-The benchmarking library is the [original framework in this repository](docs/framework.md):
-attacks (FGSM, PGD, C&W, L-BFGS, ensemble) run against a pool of pretrained
-Fashion-MNIST classifiers, scored by how much accuracy each model retains under
-attack. **This project is not about the ML.** It is about everything around it —
+The benchmarking library is [my own adversarial-robustness framework](docs/framework.md):
+attacks I implemented (FGSM, PGD, C&W, L-BFGS, ensemble) run against a pool of
+pretrained Fashion-MNIST classifiers, scored by how much accuracy each model
+retains under attack. It began as a university assignment — see
+[Provenance](#provenance) for exactly what was supplied and what I wrote. **This project is not about the ML.** It is about everything around it —
 the job lifecycle, the queue, the persistence, the failure modes, the threat
 model.
 
@@ -33,6 +34,7 @@ model.
 - [Development](#development)
 - [Limitations and what I would do next](#limitations-and-what-i-would-do-next)
 - [Project layout](#project-layout)
+- [Provenance](#provenance)
 
 ---
 
@@ -633,7 +635,7 @@ Known gaps, in the order I would close them:
 ├── migrations/               # Alembic
 ├── tests/                    # pytest
 ├── scripts/                  # demo.sh (end-to-end walkthrough) + CLI evaluation tools
-├── notebooks/                # the original adversarial-training notebook
+├── notebooks/                # my adversarial-training notebook (the defence)
 ├── models/defenders/         # the ten pretrained checkpoints
 ├── docs/framework.md         # the benchmarking library, documented on its own
 ├── docker-compose.yml        # api · worker · postgres · redis (+ migrate)
@@ -643,9 +645,34 @@ Known gaps, in the order I would close them:
 
 ---
 
-## Credits
+## Provenance
 
-Built on the adversarial robustness framework in this repository — originally a
-COMP219 university assignment, extended and then wrapped in the service
-described above. The library half is documented separately in
+The service grew out of a COMP219 university assignment. Three things were
+supplied with that assignment, and everything else in this repository is my own
+work:
+
+| Supplied | What it is |
+|---|---|
+| The evaluation harness | The scoring loop — run an attack over the test set, count what the model still classifies correctly |
+| `_attacks_internal/` | 15 reference attacks shipped as compiled `.pyc` files. Not included here, not used by the service |
+| `models/defenders/*.pt` | 10 pretrained defender checkpoints, the models the API benchmarks against |
+
+Written by me:
+
+- **The attacks** — the FGSM, PGD, C&W, L-BFGS and ensemble implementations in
+  [`src/benchmark/attacks.py`](src/benchmark/attacks.py), parametrised by
+  epsilon and iteration count.
+- **The defence** — the adversarial training loop in
+  [`notebooks/competition.ipynb`](notebooks/competition.ipynb): progressive
+  epsilon, a mixed FGSM/PGD/L-BFGS attack schedule, and a 25/75 clean/adversarial
+  loss split.
+- **The engine** — [`src/benchmark/`](src/benchmark/): the model whitelist, the
+  metrics, the epsilon-constraint checking, and the CLI tools in
+  [`scripts/`](scripts/) that replaced the original harness.
+- **The entire service** — [`src/service/`](src/service/): the API, the job
+  lifecycle, the queue and worker, the schema and migrations, the tests, the
+  containers and CI. None of this was part of the assignment; the assignment
+  produced a number on a terminal.
+
+The library half is documented separately in
 [docs/framework.md](docs/framework.md).

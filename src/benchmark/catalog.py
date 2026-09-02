@@ -50,7 +50,7 @@ def _defender(index: int) -> ModelSpec:
         dataset="fashion-mnist",
         description=(
             f"Reference defender #{index}: adversarially trained Fashion-MNIST MLP "
-            "from the source framework's defender pool."
+            "from the fixed pool the benchmark scores against."
         ),
     )
 

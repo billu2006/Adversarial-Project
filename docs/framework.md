@@ -1,9 +1,15 @@
 # The benchmarking framework
 
-The library underneath the service, and how to use it on its own. This is the
-original university-assignment material, reorganised: the attacks now take
-`epsilon` and `max_iterations` as arguments instead of hard-coding them, and the
-model whitelist replaces ad-hoc file paths.
+The library underneath the service, and how to use it on its own.
+
+It started as a COMP219 university assignment, which supplied three things: an
+evaluation harness, 15 reference attacks as compiled `.pyc` files, and 10
+pretrained defender checkpoints. The attacks, the defence, the metrics and the
+structure here are mine — see [Provenance](../README.md#provenance). Since then
+the attacks have been parametrised by `epsilon` and `max_iterations` rather than
+hard-coding them, the model whitelist has replaced ad-hoc file paths, and the
+supplied harness has been replaced by `engine.py` plus the CLI tools in
+`scripts/`.
 
 The service ([README.md](../README.md)) is a wrapper around exactly this code.
 
@@ -114,11 +120,16 @@ immediately rather than failing a job later.
 
 ## Training a defender
 
-`notebooks/competition.ipynb` holds the original adversarial-training loop that
-produced `models/defenders/*.pt` — progressive-epsilon adversarial training with
-a mix of FGSM, PGD and L-BFGS examples, and a 25/75 clean/adversarial loss
-split. It is kept as a notebook because that is what it is: exploratory work,
-not part of the service.
+`notebooks/competition.ipynb` holds my adversarial-training loop: progressive
+epsilon, a mixed FGSM/PGD/L-BFGS attack schedule during training, and a 25/75
+clean/adversarial loss split. It saves a checkpoint you can then score with
+`scripts/evaluate_defence.py --weights`.
+
+Note that this is *not* where `models/defenders/*.pt` came from — those ten are
+the reference defenders supplied with the assignment, kept as a fixed pool so
+attack scores are comparable. The notebook trains a defence to submit against
+that pool. It stays a notebook because that is what it is: exploratory work, not
+part of the service.
 
 ---
 

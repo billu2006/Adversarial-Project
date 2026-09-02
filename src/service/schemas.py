@@ -135,8 +135,8 @@ class JobResultsResponse(BaseModel):
     epsilon: float
     max_iterations: int
     results: list[AttackResultResource]
-    #: Mean robust accuracy across attacks - the headline "defence score" the
-    #: original framework reported.
+    #: Mean robust accuracy across attacks - the "defence score" the assignment
+    #: graded a defence on.
     defence_score: float | None = None
 
 

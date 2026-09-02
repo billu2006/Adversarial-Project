@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local environment / state
+.env
+.local.env
+data/
+*.db
+*.log
+dump.rdb
+
+# OS / editor metadata
+.DS_Store
+.ipynb_checkpoints/
